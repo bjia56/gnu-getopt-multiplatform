@@ -32,17 +32,17 @@ jobs:
           UTIL_LINUX_VERSION="${{ inputs.util-linux-version }}"
 
           # Get all existing tags for this util-linux version
-          EXISTING_TAGS=$(git tag -l "v${UTIL_LINUX_VERSION}.*" | sort -V)
+          EXISTING_TAGS=$(git tag -l "${UTIL_LINUX_VERSION}.*" | sort -V)
 
           if [ -z "$EXISTING_TAGS" ]; then
             # No existing tags for this version, start with .0
-            NEXT_VERSION="v${UTIL_LINUX_VERSION}.0"
+            NEXT_VERSION="${UTIL_LINUX_VERSION}.0"
           else
             # Find the highest subpatch number
             HIGHEST_TAG=$(echo "$EXISTING_TAGS" | tail -n 1)
-            CURRENT_SUBPATCH=$(echo "$HIGHEST_TAG" | sed "s/v${UTIL_LINUX_VERSION}\.//" | sed 's/-.*//')
+            CURRENT_SUBPATCH=$(echo "$HIGHEST_TAG" | sed "s/${UTIL_LINUX_VERSION}\.//" | sed 's/-.*//')
             NEXT_SUBPATCH=$((CURRENT_SUBPATCH + 1))
-            NEXT_VERSION="v${UTIL_LINUX_VERSION}.${NEXT_SUBPATCH}"
+            NEXT_VERSION="${UTIL_LINUX_VERSION}.${NEXT_SUBPATCH}"
           fi
 
           echo "Next version will be: $NEXT_VERSION"
