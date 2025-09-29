@@ -35,35 +35,33 @@ jobs:
 
       - name: Build gnu-getopt x86_64
         run: |
-          VERSION=${{ env.version }}
           export CC="x86_64-unknown-cosmo-cc"
           export CXX="x86_64-unknown-cosmo-c++"
           export RANLIB="unknown-unknown-cosmo-ranlib"
 
           git clone https://github.com/util-linux/util-linux.git util-linux-x86_64
           cd util-linux-x86_64
-          git checkout "v${VERSION}"
+          git checkout "${{ env.version }}"
           patch -p1 < ../getopt.patch
 
           ./autogen.sh
           ./configure --host=x86_64
-          make -j$(nproc) getopt
+          make -j4 getopt
 
       - name: Build gnu-getopt aarch64
         run: |
-          VERSION=${{ env.version }}
           export CC="aarch64-unknown-cosmo-cc"
           export CXX="aarch64-unknown-cosmo-c++"
           export RANLIB="unknown-unknown-cosmo-ranlib"
 
           git clone https://github.com/util-linux/util-linux.git util-linux-aarch64
           cd util-linux-aarch64
-          git checkout "v${VERSION}"
+          git checkout "${{ env.version }}"
           patch -p1 < ../getopt.patch
 
           ./autogen.sh
           ./configure --host=aarch64
-          make -j$(nproc) getopt
+          make -j4 getopt
 
       - name: Download Blink
         run: |
