@@ -1,0 +1,123 @@
+name: Build gnu-getopt
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+  push:
+    branches: ["main"]
+  pull_request:
+
+env:
+  version: ${{ inputs.version || 'v2.41.2' }}
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up cosmocc
+        uses: bjia56/setup-cosmocc@v0.0.5
+
+      - name: Install dependencies
+        run: |
+          brew tap bjia56/tap
+          brew install autoconf automake libtool upx gpatch chimplink
+
+      - name: Build gnu-getopt x86_64
+        run: |
+          VERSION=${{ env.version }}
+          export CC="x86_64-unknown-cosmo-cc"
+          export CXX="x86_64-unknown-cosmo-c++"
+          export RANLIB="unknown-unknown-cosmo-ranlib"
+
+          git clone https://github.com/util-linux/util-linux.git util-linux-x86_64
+          cd util-linux-x86_64
+          git checkout "v${VERSION}"
+          patch -p1 < ../getopt.patch
+
+          ./autogen.sh
+          ./configure --host=x86_64
+          make -j$(nproc) getopt
+
+      - name: Build gnu-getopt aarch64
+        run: |
+          VERSION=${{ env.version }}
+          export CC="aarch64-unknown-cosmo-cc"
+          export CXX="aarch64-unknown-cosmo-c++"
+          export RANLIB="unknown-unknown-cosmo-ranlib"
+
+          git clone https://github.com/util-linux/util-linux.git util-linux-aarch64
+          cd util-linux-aarch64
+          git checkout "v${VERSION}"
+          patch -p1 < ../getopt.patch
+
+          ./autogen.sh
+          ./configure --host=aarch64
+          make -j$(nproc) getopt
+
+      - name: Download Blink
+        run: |
+          blinkverse=v9
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-linux-i386-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-linux-powerpc64le-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-linux-riscv64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-linux-s390x-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-linux-loongarch64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-netbsd10.0-aarch64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-openbsd7.6-x86_64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-openbsd7.6-aarch64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-solaris11.4-x86_64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-dragonflybsd6.4.0-x86_64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-midnightbsd3.2.3-x86_64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-haikur1beta5-x86_64-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-aix7.2-powerpc-stripped
+          wget -q https://github.com/bjia56/blinkverse/releases/download/${blinkverse}/blink-tiny-macos10.4-powerpc-stripped
+
+          for file in blink-tiny-linux-i386-stripped blink-tiny-linux-powerpc64le-stripped; do
+            chmod +x $file
+            upx --best $file
+          done
+
+      - name: Apelink
+        run: |
+          cosmo_bin=$(dirname $(which cosmocc))
+          apelink \
+            -s \
+            -S "V=${{ env.version }}-${{ github.sha }}" \
+            -l ${cosmo_bin}/ape-x86_64.elf \
+            -M ${cosmo_bin}/ape-m1.c \
+            -o getopt.exe \
+            util-linux-x86_64/getopt \
+            util-linux-aarch64/getopt
+
+      - name: Chimplink
+        run: |
+          cosmo_bin=$(dirname $(which cosmocc))
+          chimplink getopt.exe getopt ${{ env.version }}-${{ github.sha }} \
+            ${cosmo_bin}/ape-x86_64.elf \
+            ${cosmo_bin}/ape-aarch64.elf \
+            --os Linux blink-tiny-linux* \
+            --os NetBSD blink-tiny-netbsd* \
+            --os OpenBSD blink-tiny-openbsd* \
+            --os DragonFly blink-tiny-dragonflybsd* \
+            --os MidnightBSD blink-tiny-midnightbsd* \
+            --os Solaris blink-tiny-solaris* \
+            --os AIX blink-tiny-aix* \
+            --os Haiku blink-tiny-haiku* \
+            --os Darwin blink-tiny-macos10.4-powerpc*
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: getopt
+          path: getopt

@@ -1,0 +1,13 @@
+diff --git a/include/c.h b/include/c.h
+index dcb2d683c..504202d6c 100644
+--- a/include/c.h
++++ b/include/c.h
+@@ -368,7 +368,7 @@ static inline int dirfd(DIR *d)
+ #endif
+ 
+ #ifndef IUTF8
+-#define IUTF8 0040000
++//#define IUTF8 0040000
+ #endif
+ 
+ /*
