@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           brew tap bjia56/tap
-          brew install autoconf automake libtool upx gpatch chimplink
+          brew install autoconf automake libtool upx gpatch chimp
 
       - name: Build gnu-getopt x86_64
         run: |
