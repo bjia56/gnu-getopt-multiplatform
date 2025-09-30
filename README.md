@@ -1,5 +1,5 @@
 # gnu-getopt-multiplatform
-Multiplatform builds of GNU getopt. Powered by Cosmopolitan Libc and the Chimp file format.
+Multiplatform builds of GNU getopt. Powered by [Cosmopolitan Libc](https://github.com/jart/cosmopolitan) and the [Chimp](https://github.com/bjia56/chimp) file format.
 
 ## Runtime Dependencies
 
